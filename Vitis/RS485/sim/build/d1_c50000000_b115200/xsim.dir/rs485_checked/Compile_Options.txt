@@ -1,0 +1,1 @@
+"work.tb_rs485_key_led" -s "rs485_checked" -debug "typical" -mt "2" -generic_top "DEBOUNCE_MS=1" -generic_top "CLK_FREQ=50000000" -generic_top "UART_BPS=115200" 

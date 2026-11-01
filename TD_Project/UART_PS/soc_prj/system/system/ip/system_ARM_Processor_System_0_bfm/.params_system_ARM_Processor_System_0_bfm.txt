@@ -1,0 +1,26 @@
+AL_S_AXI_HP0_ENABLE : 0 : U : En :  :  : 
+AL_S_AXI_HP1_ENABLE : 0 : U : En :  :  : 
+AL_S_AXI_HP0_DATA_WIDTH : 64 : U : Dis : 32;;64 :  : 
+AL_S_AXI_HP1_DATA_WIDTH : 64 : U : Dis : 32;;64 :  : 
+AL_M_AXI_GP0_ENABLE : 0 : U : En :  :  : 
+AL_M_AXI_GP1_ENABLE : 0 : U : En :  :  : 
+AL_S_AXI_GP0_ENABLE : 0 : U : En :  :  : 
+AL_S_AXI_GP1_ENABLE : 0 : U : En :  :  : 
+AL_S_AXI_ACP_ENABLE : 0 : U : En :  :  : 
+AL_MEM_CLK_FREQ : 400 : G : En :  :  : 
+AL_FAHB_HCLK_FREQ : 100 : U : En :  : 33 : 800
+AL_FCLK_CLK0_FREQ : 50 : U : En :  : 7 : 200
+AL_FCLK_CLK1_FREQ : 50 : U : En :  : 7 : 200
+AL_FCLK_CLK2_FREQ : 50 : U : En :  : 7 : 200
+AL_FCLK_CLK3_FREQ : 50 : U : En :  : 7 : 200
+AL_S_AXI_ACP_DATA_WIDTH : 64 : U : Dis : 64 :  : 
+AL_M_AXI_GP0_THREAD_ID_WIDTH : 12 : G : En :  :  : 
+AL_M_AXI_GP1_THREAD_ID_WIDTH : 12 : G : En :  :  : 
+AL_IRQ_WIDTH : 16 : G : En :  :  : 
+AL_AXI_SGP_DATA_WIDTH : 32 : G : En :  :  : 
+AL_M_AXI_GP0_DATA_WIDTH : 32 : U : Dis : 32 :  : 
+AL_M_AXI_GP1_DATA_WIDTH : 32 : U : Dis : 32 :  : 
+AL_S_AXI_GP0_DATA_WIDTH : 32 : U : Dis : 32 :  : 
+AL_S_AXI_GP1_DATA_WIDTH : 32 : U : Dis : 32 :  : 
+AL_M_FAHB_ENABLE : 1 : U : En :  :  : 
+AL_M_FAHB_DATA_WIDTH : 32 : U : En : 32 :  : 

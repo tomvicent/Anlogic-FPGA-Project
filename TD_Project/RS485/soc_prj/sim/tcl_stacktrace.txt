@@ -1,0 +1,43 @@
+Thu Oct 15 16:15:08 CST 2026
+Trace back: invalid command name ""
+    while executing
+"$itk_component(scinwidget) configure -state $busystate(old)"
+    (method "::vsimwidgets::Srcobj::BusyPost" body line 8)
+    invoked from within
+"BusyPost"
+    (method "::vsimwidgets::Srcobj::ExecBusyCmd" body line 25)
+    invoked from within
+"$_srcedit ExecBusyCmd $timeout $msg"
+    (method "::vsimwidgets::Srcedit::ResultsWidget::_update" body line 52)
+    invoked from within
+"::.main_pane.source.interior.cs.body.srcobj.extra_f.drivers _update -data {{sim:/tb_rs485_key_led/uut/u_led_ctrl/#ALWAYS#17 sim:/tb_rs485_key_led/uut/..."
+    ("eval" body line 1)
+    invoked from within
+"eval $o _update $args"
+    (procedure "::vsimwidgets::Srcedit::ResultsWidget::Update" body line 10)
+    invoked from within
+"vsimwidgets::Srcedit::ResultsWidget::Update  -data $DriverList -signal $sig -from $d_or_r -nofilter"
+    (procedure "::SourceEdit::MultipleDriverDialog" line 33)
+    invoked from within
+"::SourceEdit::MultipleDriverDialog $sig $DriverList $drivers_or_readers"
+    (procedure "::SourceEdit::HandleDrivers" line 87)
+    invoked from within
+"::SourceEdit::HandleDrivers [lindex $sigList 0] $d_or_r"
+    (procedure "_showDFReadersDrivers" line 41)
+    invoked from within
+"_showDFReadersDrivers drivers .main_pane.wave.interior.cs.body.pw.wf 1"
+    ("eval" body line 1)
+    invoked from within
+"eval _showDFReadersDrivers "drivers" $winname $classic $args"
+    (procedure "Wave::ShowDFDrivers" line 2)
+    invoked from within
+"Wave::ShowDFDrivers $top 1"
+    (procedure "Wave::1Up" line 27)
+    invoked from within
+"Wave::1Up $widget $x $y"
+    (procedure "Wave::SelectUp" line 4)
+    invoked from within
+"Wave::SelectUp	 .main_pane.wave.interior.cs.body.pw.wf.grid.row0,wave.data 536 235 3367 570 "
+    (command bound to event)
+  <2:D:/ModelSim/win64/tk8.6/bgerror.tcl:106: ::tkerror {invalid command name ""}
+  <1:eval:1: ::tk::dialog::error::bgerror {invalid command name ""}

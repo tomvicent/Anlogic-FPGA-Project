@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n -B2 -A45 \"axi_vdma_0$\\\\|axi_vdma_0 \" system.v)",
+      "Bash(python3 -)",
+      "Read(//c/Xilinx/Vivado/**)",
+      "Bash(tasklist)"
+    ]
+  }
+}

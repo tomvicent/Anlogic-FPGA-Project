@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ipxact:root xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014" xmlns:anlogic="http" xsi:schemaLocation="http://www.accellera.org/XMLSchema/IPXACT/1685-2014 http://www.accellera.org/XMLSchema/IPXACT/1685-2014/index.xsd">
+    <ipxact:compositeFile compositeFileTopName="system">
+        <ipxact:fileCollection>
+            <ipxact:file name="ip/system_ARM_Processor_System_0/system_ARM_Processor_System_0.xml">
+                <ipxact:instanceName>ARM_Processor_System_0</ipxact:instanceName>
+                <ipxact:customTool>use_ps</ipxact:customTool>
+            </ipxact:file>
+        </ipxact:fileCollection>
+    </ipxact:compositeFile>
+</ipxact:root>

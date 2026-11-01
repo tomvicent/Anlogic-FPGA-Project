@@ -1,0 +1,682 @@
+# =============================================================================
+# 四轴电机闭环控制 FPGA 系统 —— 接口契约
+# 目标器件: 安路 Anlogic DR1M90GEG400 (米联客 MLK-F3P-CZ02 DR1)
+# 工具链  : Tang Dynasty (.adc 物理约束 + .sdc 时序约束)
+# 时钟域  : 单一时钟域 clk_100m (PL_CLK / H16 / 100MHz / LVCMOS33)
+# -----------------------------------------------------------------------------
+# CONTRACT STATUS: FROZEN-EXCEPT-MARKED-TBD
+#   本文件冻结顶层端口与子模块端口契约。标记 [TBD] 的条目依赖尚未确认的
+#   硬件信息，冻结的是"接口形状"，不是"接口参数值"。
+# =============================================================================
+
+schema: iccoder.interface_contract.v1
+project: four_axis_motor_closed_loop
+top_module: top
+top_module_style: systemverilog
+target_device: DR1M90GEG400
+vendor: anlogic
+
+# -----------------------------------------------------------------------------
+# 全局端口命名约定（下游 RTL / TB / 约束必须沿用）
+# -----------------------------------------------------------------------------
+naming_convention:
+  input_prefix: "i_"
+  output_prefix: "o_"
+  clock: "i_clk"
+  reset: "i_rst_n   # 低有效；内部经 reset_sync 生成 sys_rst_n"
+  four_channel_bus: "位-每-轴约定：o_<group>[3:0]，bit[a] 属于第 a 轴 (a=0..3)"
+  rationale: |
+    位-每-轴约定让同一组 4 路信号在约束文件中表现为一个 4 位总线，
+    避免 4 组独立端口名带来的约束冗余与错配风险。
+
+# -----------------------------------------------------------------------------
+# 1. 时钟与复位
+# -----------------------------------------------------------------------------
+clock_reset_ports:
+  - name: i_clk
+    direction: input
+    width: 1
+    clock_domain: clk_100m
+    board_net: PL_CLK
+    package_pin: H16
+    bank: 33
+    io_standard: LVCMOS33
+    frequency_hz: 100000000
+    period_ns: 10
+    auto_constraint_ok: true
+    note: "板级事实已在 doc/hw/config.json 交叉核对，仅需确认顶层端口名"
+
+  - name: i_rst_n
+    direction: input
+    width: 1
+    clock_domain: async
+    active_level: low
+    board_net: "[TBD]"
+    package_pin: "[TBD]"
+    note: |
+      建议取自 CEP-J12 的空闲引脚（见 connection_matrix.md 的引脚预算）。
+      若最终不引出外部复位，退化为纯内部上电复位计数器，本端口删除。
+      内部必须经过 reset_sync（异步置位 / 同步释放）后才可驱动逻辑。
+    open_decision: D7
+
+# -----------------------------------------------------------------------------
+# 2. 电机驱动输出（每轴：三相 PWM 6 路 + 步进 2 路，模式互斥）
+# -----------------------------------------------------------------------------
+motor_drive_ports:
+  mode_semantics: |
+    每轴由参数 AXIS_DRIVE_MODE[a] 选择驱动模式：
+      0 = 三相 PWM 模式  -> 使用 o_m_pwm_hi_{a,b,c} / o_m_pwm_lo_{a,b,c}
+      1 = STEP/DIR 模式  -> 使用 o_m_step_pul[a] / o_m_step_dir[a]
+    未被选中模式的输出必须被驱动到"非激活安全电平"（默认低），
+    不允许悬空、不允许三态。
+  three_phase_deadtime_ownership: "PL 内部插入死区并输出上下管分离信号（用户确认口径）"
+  open_decision: D1   # 若外部栅极驱动器自带死区，可释放 pwm_lo 12 根引脚
+
+  ports:
+    - name: o_m_pwm_hi_a
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      group: three_phase
+      semantics: "bit[a]=第 a 轴 A 相上管门极信号"
+    - name: o_m_pwm_hi_b
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      group: three_phase
+      semantics: "bit[a]=第 a 轴 B 相上管门极信号"
+    - name: o_m_pwm_hi_c
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      group: three_phase
+      semantics: "bit[a]=第 a 轴 C 相上管门极信号"
+    - name: o_m_pwm_lo_a
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      group: three_phase
+      semantics: "bit[a]=第 a 轴 A 相下管门极信号；与 pwm_hi_a[a] 严格互斥并插入死区"
+    - name: o_m_pwm_lo_b
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      group: three_phase
+      semantics: "bit[a]=第 a 轴 B 相下管门极信号；与 pwm_hi_b[a] 严格互斥并插入死区"
+    - name: o_m_pwm_lo_c
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      group: three_phase
+      semantics: "bit[a]=第 a 轴 C 相下管门极信号；与 pwm_hi_c[a] 严格互斥并插入死区"
+    - name: o_m_step_pul
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      group: step_dir
+      semantics: "bit[a]=第 a 轴步进脉冲；一个脉冲 = 一个微步。最小脉宽可参数化"
+    - name: o_m_step_dir
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      group: step_dir
+      semantics: "bit[a]=第 a 轴方向电平；1=正转 / 0=反转（极性可参数化）"
+
+# -----------------------------------------------------------------------------
+# 3. SPI 角度传感器接口（4 路独立）
+# -----------------------------------------------------------------------------
+spi_angle_ports:
+  topology: "每轴独立 SCK/MOSI/MISO/CS（共 16 根）"
+  alternative_topology: "共享 SCK+MOSI、独立 MISO+CS（共 10 根，省 6 根引脚）"
+  topology_decision: D3
+  topology_note: |
+    独立拓扑对"4 轴可能使用不同型号传感器"最安全，且每轴时序互不干扰；
+    代价是占用 16 根引脚（引脚预算刚好吃满，零余量）。
+    若引脚紧张，改为共享 SCK+MOSI，前提是 4 个传感器型号一致、SPI 模式一致。
+  framing:
+    frame_bits: 16          # [TBD] 逐型号确认（AS5047P=16bit, TLE5012B 不同）
+    cpol: 0                 # [TBD]
+    cpha: 1                 # [TBD]
+    sck_hz_max: 10000000    # [TBD]
+    angle_bits: 14          # [TBD] AS5047P=14, TLE5012B=15
+    open_decision: D3
+
+  ports:
+    - name: o_spi_sck
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      semantics: "bit[a]=第 a 轴 SCK；由 clk_100m 分频产生，空闲电平由 CPOL 决定"
+    - name: o_spi_mosi
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      semantics: "bit[a]=第 a 轴 MOSI（命令/地址输出）"
+    - name: i_spi_miso
+      direction: input
+      width: 4
+      clock_domain: clk_100m (异步输入)
+      semantics: "bit[a]=第 a 轴 MISO；相对 clk_100m 属异步输入，须 2-FF 同步后采样"
+      cdc: "two_flop_sync"
+    - name: o_spi_cs_n
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      active_level: low
+      semantics: "bit[a]=第 a 轴片选；帧生命周期 = CS 拉低 -> N 个 SCK -> CS 拉高"
+
+# -----------------------------------------------------------------------------
+# 4. ABZ 正交编码器输入（4 路，单端 3.3V 直连 PL）
+# -----------------------------------------------------------------------------
+abz_ports:
+  electrical: "单端 3.3V 直连（用户确认），无需外部差分接收器"
+  decoding: "四倍频（ABZ_QUAD4=1），32 bit 位置计数器"
+  cdc: "三路均为异步输入，各自 2-FF 同步；A/B 再经数字滤波匹配最高计数频率"
+  z_phase_role: |
+    Z 相不用于实时计数，仅用于：(1) 索引锁存、(2) 可选位置预置、
+    (3) ABZ 计数与 SPI 绝对角的一致性校验。Z 相不可做深度去抖，
+    否则会引入位置偏移。详见 clock_reset_cdc.md。
+  ports:
+    - name: i_abz_a
+      direction: input
+      width: 4
+      clock_domain: async -> clk_100m
+      cdc: "two_flop_sync + digital_filter"
+    - name: i_abz_b
+      direction: input
+      width: 4
+      clock_domain: async -> clk_100m
+      cdc: "two_flop_sync + digital_filter"
+    - name: i_abz_z
+      direction: input
+      width: 4
+      clock_domain: async -> clk_100m
+      cdc: "two_flop_sync (无深度去抖)"
+
+# -----------------------------------------------------------------------------
+# 5. 微动开关输入（4 路）
+# -----------------------------------------------------------------------------
+switch_ports:
+  debounce_time_ms: 10      # 可参数化 DEBOUNCE_MS
+  active_level: low         # 可参数化 SW_ACTIVE_LOW（默认低有效，即开关闭合到地）
+  ports:
+    - name: i_sw
+      direction: input
+      width: 4
+      clock_domain: async -> clk_100m
+      cdc: "two_flop_sync + debounce"
+      semantics: "bit[a]=第 a 轴微动开关原始电平；去抖后供上层使用"
+
+# -----------------------------------------------------------------------------
+# 6. 数字输出（使能 / 抱闸，4 路）
+# -----------------------------------------------------------------------------
+digital_output_ports:
+  safe_state: |
+    上电与复位期间必须输出安全态：抱闸=抱死、使能=禁止。
+    安全电平由 DOUT_SAFE_LEVEL 与 DOUT_ACTIVE_LOW 共同决定，缺省均为 0。
+  polarity_param: DOUT_ACTIVE_LOW
+  ports:
+    - name: o_dout
+      direction: output
+      width: 4
+      clock_domain: clk_100m
+      semantics: "bit[a]=第 a 轴数字输出；语义（使能 or 抱闸）由上层命令寄存器定义"
+      note: "若每轴需同时具备使能与抱闸 2 路，本端口需扩至 8 位 —— 见 open_decision D6"
+
+# -----------------------------------------------------------------------------
+# 7. 状态指示
+# -----------------------------------------------------------------------------
+status_ports:
+  - name: o_led
+    direction: output
+    width: 2
+    clock_domain: clk_100m
+    board_net: ["LED3", "LED4"]
+    package_pin: ["J15", "M20"]
+    bank: 33
+    io_standard: LVCMOS33
+    auto_constraint_ok: true
+    semantics: "o_led[0]=系统 heartbeat / 无故障；o_led[1]=四轴全部 aligned"
+
+# =============================================================================
+# 子模块端口契约
+# =============================================================================
+
+submodule_contracts:
+
+  # ---------------------------------------------------------------------------
+  - module: clk_reset_gen
+    level: 1
+    responsibility: "上电复位生成 + 复位同步 + 全部时钟使能（tick）生成"
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,          dir: in,  width: 1,  domain: clk_100m, note: "100MHz"}
+      - {name: i_rst_n,        dir: in,  width: 1,  domain: async,    note: "外部低有效复位，可为 1'b1（不用）"}
+      - {name: o_sys_rst_n,    dir: out, width: 1,  domain: clk_100m, note: "异步置位/同步释放后的全局复位"}
+      - {name: o_en_ctrl_tick, dir: out, width: 1,  domain: clk_100m, note: "控制周期单拍使能，1 kHz"}
+      - {name: o_en_pwm_tick,  dir: out, width: 1,  domain: clk_100m, note: "PWM 载波计数使能（可选，亦可自由运行）"}
+      - {name: o_en_deb_tick,  dir: out, width: 1,  domain: clk_100m, note: "去抖计数器采样使能"}
+      - {name: o_por_done,     dir: out, width: 1,  domain: clk_100m, note: "上电复位过程完成"}
+    params:
+      - {name: CLK_FREQ_HZ,  default: 100000000}
+      - {name: CTRL_TICK_HZ, default: 1000}
+      - {name: POR_CYCLES,   default: 1024, note: "上电复位保持周期数"}
+
+  # ---------------------------------------------------------------------------
+  - module: sync_timebase
+    level: 1
+    responsibility: |
+      四轴共享时基。产生全局唯一的三角载波计数器，四轴全部由它派生相位，
+      从根本上保证"同频同相"。同时分发全局 run/stop 使能，保证"同时启停"。
+      本模块不持有任何 per-axis 状态。
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,             dir: in,  width: 1,  domain: clk_100m}
+      - {name: i_rst_n,           dir: in,  width: 1,  domain: clk_100m}
+      - {name: i_en_pwm_tick,     dir: in,  width: 1,  domain: clk_100m, note: "载波推进节拍；亦可常 1'b1 让载波自由运行"}
+      - {name: i_run,             dir: in,  width: 1,  domain: clk_100m, note: "全局启停，四轴同拍生效"}
+      - {name: i_align_start,     dir: in,  width: 1,  domain: clk_100m, note: "全局对齐启动脉冲"}
+      - {name: o_carrier_cnt,     dir: out, width: 16, domain: clk_100m, note: "三角载波计数，四轴共用"}
+      - {name: o_carrier_dir,     dir: out, width: 1,  domain: clk_100m, note: "1=上升段 0=下降段，中心对齐 PWM 用"}
+      - {name: o_carrier_wrap,    dir: out, width: 1,  domain: clk_100m, note: "载波回绕脉冲"}
+      - {name: o_carrier_zero,    dir: out, width: 1,  domain: clk_100m, note: "载波过零脉冲"}
+      - {name: o_tb_phase,        dir: out, width: 16, domain: clk_100m, note: "广播给四轴的相位基准"}
+    params:
+      - {name: PWM_CARRIER_HZ, default: 20000}
+      - {name: CLK_FREQ_HZ,    default: 100000000}
+    invariants:
+      - "四轴的相位完全由 o_tb_phase 派生，任何轴不得自建载波计数器"
+      - "i_run 的采样点对四轴一致，不存在逐轴延迟"
+
+  # ---------------------------------------------------------------------------
+  - module: axis_ctrl
+    level: 1
+    instances: 4
+    instance_naming: "u_axis_ctrl_gen[a].u_axis_ctrl"
+    responsibility: |
+      单轴的完整闭环数据通路容器：驱动输出生成、双路反馈采集与融合、
+      位置/速度级联 PID、故障检测。四轴实例参数化不同（驱动模式、PID 系数、
+      极对数），但接口完全一致。
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,          dir: in,  width: 1,      domain: clk_100m}
+      - {name: i_rst_n,        dir: in,  width: 1,      domain: clk_100m}
+      - {name: i_en_ctrl_tick, dir: in,  width: 1,      domain: clk_100m}
+      - {name: i_en_deb_tick,  dir: in,  width: 1,      domain: clk_100m}
+      # 共享时基
+      - {name: i_run,          dir: in,  width: 1,      domain: clk_100m}
+      - {name: i_carrier_cnt,  dir: in,  width: 16,     domain: clk_100m}
+      - {name: i_carrier_dir,  dir: in,  width: 1,      domain: clk_100m}
+      # 命令面
+      - {name: i_axis_enable,  dir: in,  width: 1,      domain: clk_100m, note: "来自寄存器/PS，使能本轴闭环"}
+      - {name: i_pos_cmd,      dir: in,  width: 32,     domain: clk_100m, note: "目标位置（编码器计数单位）"}
+      - {name: i_vel_cmd,      dir: in,  width: 32,     domain: clk_100m, note: "前馈速度指令（可选）"}
+      - {name: i_align_req,    dir: in,  width: 1,      domain: clk_100m, note: "请求用 SPI 绝对角重新对齐"}
+      # 驱动输出
+      - {name: o_pwm_hi_a,     dir: out, width: 1,      domain: clk_100m}
+      - {name: o_pwm_hi_b,     dir: out, width: 1,      domain: clk_100m}
+      - {name: o_pwm_hi_c,     dir: out, width: 1,      domain: clk_100m}
+      - {name: o_pwm_lo_a,     dir: out, width: 1,      domain: clk_100m}
+      - {name: o_pwm_lo_b,     dir: out, width: 1,      domain: clk_100m}
+      - {name: o_pwm_lo_c,     dir: out, width: 1,      domain: clk_100m}
+      - {name: o_step_pul,     dir: out, width: 1,      domain: clk_100m}
+      - {name: o_step_dir,     dir: out, width: 1,      domain: clk_100m}
+      # SPI
+      - {name: o_spi_sck,      dir: out, width: 1,      domain: clk_100m}
+      - {name: o_spi_mosi,     dir: out, width: 1,      domain: clk_100m}
+      - {name: i_spi_miso,     dir: in,  width: 1,      domain: async -> clk_100m, cdc: two_flop_sync}
+      - {name: o_spi_cs_n,     dir: out, width: 1,      domain: clk_100m}
+      # ABZ
+      - {name: i_abz_a,        dir: in,  width: 1,      domain: async -> clk_100m, cdc: two_flop_sync}
+      - {name: i_abz_b,        dir: in,  width: 1,      domain: async -> clk_100m, cdc: two_flop_sync}
+      - {name: i_abz_z,        dir: in,  width: 1,      domain: async -> clk_100m, cdc: two_flop_sync}
+      # 观测
+      - {name: o_pos_meas,     dir: out, width: 32,     domain: clk_100m, note: "融合后多圈位置"}
+      - {name: o_vel_meas,     dir: out, width: 32,     domain: clk_100m, note: "速度估计，符号位有效"}
+      - {name: o_angle_abs,    dir: out, width: 16,     domain: clk_100m, note: "SPI 单圈绝对角原始值右对齐"}
+      - {name: o_angle_valid,  dir: out, width: 1,      domain: clk_100m}
+      - {name: o_aligned,      dir: out, width: 1,      domain: clk_100m}
+      - {name: o_spi_err,      dir: out, width: 1,      domain: clk_100m, note: "SPI 无响应/帧错误"}
+      - {name: o_fusion_err,   dir: out, width: 1,      domain: clk_100m, note: "ABZ 与 SPI 长期不一致"}
+      - {name: o_fault,        dir: out, width: 1,      domain: clk_100m}
+      - {name: o_dout_req,     dir: out, width: 1,      domain: clk_100m, note: "本轴数字输出请求"}
+    params:
+      - {name: AXIS_INDEX,       default: 0,        note: "0..3，仅用于调试可见性"}
+      - {name: DRIVE_MODE,       default: 0,        note: "0=three_phase 1=step_dir"}
+      - {name: MOTOR_POLE_PAIRS, default: 7,        note: "[TBD] 按实际电机"}
+      - {name: PWM_CARRIER_HZ,   default: 20000}
+      - {name: PWM_DEADTIME_NS,  default: 1000,     note: "[TBD] 按栅极驱动/MOSFET"}
+      - {name: STEP_PUL_MIN_NS,  default: 500,      note: "[TBD] 按步进驱动器最小脉宽"}
+      - {name: SPI_SCK_HZ,       default: 10000000}
+      - {name: SPI_CPOL,         default: 0}
+      - {name: SPI_CPHA,         default: 1}
+      - {name: SPI_FRAME_BITS,   default: 16}
+      - {name: SPI_ANGLE_BITS,   default: 14}
+      - {name: CS_SETUP_NS,      default: 100}
+      - {name: CS_HOLD_NS,       default: 100}
+      - {name: FRAME_TIMEOUT_NS, default: 100000}
+      - {name: ABZ_POS_WIDTH,    default: 32}
+      - {name: ABZ_QUAD4,        default: 1}
+      - {name: ABZ_FILTER_DEPTH, default: 2,        note: "限制最高可靠计数频率，见 clock_reset_cdc.md §3.2"}
+      - {name: ABZ_CNT_PER_REV,  default: 4096,     note: "[TBD] 编码器线数 x 4"}
+      - {name: CURRENT_LOOP_EN,  default: 0,        note: "[TBD] FOC 开关，见 open_decision D2"}
+      - {name: POS_KP,           default: 0,        note: "默认 0 —— 未整定的闭环不得输出驱动"}
+      - {name: POS_KI,           default: 0}
+      - {name: POS_KD,           default: 0}
+      - {name: VEL_KP,           default: 0}
+      - {name: VEL_KI,           default: 0}
+      - {name: VEL_KD,           default: 0}
+      - {name: PID_OUT_MAX,      default: 0}
+      - {name: PID_OUT_MIN,      default: 0}
+      - {name: FUSION_ERR_THRESH, default: 8}
+      - {name: FUSION_ERR_PERSIST, default: 10}
+
+  # ---------------------------------------------------------------------------
+  - module: drive_gen
+    level: 2
+    parent: axis_ctrl
+    responsibility: "按 DRIVE_MODE 在 pwm3ph_deadtime 与 stepdir_gen 之间选择，并保证未选中分支输出安全电平"
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,        dir: in,  width: 1}
+      - {name: i_rst_n,      dir: in,  width: 1}
+      - {name: i_drive_mode, dir: in,  width: 1}
+      - {name: i_carrier_cnt,dir: in,  width: 16,  note: "共享载波"}
+      - {name: i_carrier_dir,dir: in,  width: 1}
+      - {name: i_duty_a,     dir: in,  width: 16,  note: "A 相占空比命令，来自 PID/换相"}
+      - {name: i_duty_b,     dir: in,  width: 16}
+      - {name: i_duty_c,     dir: in,  width: 16}
+      - {name: i_step_rate,  dir: in,  width: 32,  note: "步进速率命令（脉冲/秒）"}
+      - {name: i_step_dir,   dir: in,  width: 1}
+      - {name: i_elec_angle, dir: in,  width: 16,  note: "电角度，来自 feedback_fusion"}
+      - {name: o_pwm_hi_a,   dir: out, width: 1}
+      - {name: o_pwm_hi_b,   dir: out, width: 1}
+      - {name: o_pwm_hi_c,   dir: out, width: 1}
+      - {name: o_pwm_lo_a,   dir: out, width: 1}
+      - {name: o_pwm_lo_b,   dir: out, width: 1}
+      - {name: o_pwm_lo_c,   dir: out, width: 1}
+      - {name: o_step_pul,   dir: out, width: 1}
+      - {name: o_step_dir,   dir: out, width: 1}
+
+  # ---------------------------------------------------------------------------
+  - module: pwm3ph_deadtime
+    level: 3
+    parent: drive_gen
+    responsibility: |
+      中心对齐三相 PWM 生成 + 可编程死区插入。输入 3 路占空比，
+      输出 3 对上下管信号。核心不变量：同桥臂上下管绝不同时为高。
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,         dir: in,  width: 1}
+      - {name: i_rst_n,       dir: in,  width: 1}
+      - {name: i_carrier_cnt, dir: in,  width: 16}
+      - {name: i_carrier_dir, dir: in,  width: 1}
+      - {name: i_duty_a,      dir: in,  width: 16}
+      - {name: i_duty_b,      dir: in,  width: 16}
+      - {name: i_duty_c,      dir: in,  width: 16}
+      - {name: i_out_en,      dir: in,  width: 1,   note: "0=全部输出关断（安全态）"}
+      - {name: o_hi_a,        dir: out, width: 1}
+      - {name: o_hi_b,        dir: out, width: 1}
+      - {name: o_hi_c,        dir: out, width: 1}
+      - {name: o_lo_a,        dir: out, width: 1}
+      - {name: o_lo_b,        dir: out, width: 1}
+      - {name: o_lo_c,        dir: out, width: 1}
+    params:
+      - {name: PWM_DEADTIME_NS, default: 1000}
+      - {name: CLK_FREQ_HZ,     default: 100000000}
+      - {name: DUTY_WIDTH,      default: 16}
+    invariants:
+      - "forall t: !(o_hi_x & o_lo_x) for x in {a,b,c}"
+      - "死区宽度 = PWM_DEADTIME_NS 对应的时钟周期数，误差 0 拍"
+
+  # ---------------------------------------------------------------------------
+  - module: stepdir_gen
+    level: 3
+    parent: drive_gen
+    responsibility: "STEP/DIR 脉冲发生器：按速率命令产生脉冲，满足最小脉宽约束，可选加减速斜坡"
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,       dir: in,  width: 1}
+      - {name: i_rst_n,     dir: in,  width: 1}
+      - {name: i_step_rate, dir: in,  width: 32, note: "脉冲/秒，Q 格式由实现定义"}
+      - {name: i_step_dir,  dir: in,  width: 1}
+      - {name: i_out_en,    dir: in,  width: 1}
+      - {name: o_pul,       dir: out, width: 1}
+      - {name: o_dir,       dir: out, width: 1}
+      - {name: o_pul_cnt,   dir: out, width: 32, note: "已发脉冲计数，供位置环比对"}
+    params:
+      - {name: STEP_PUL_MIN_NS, default: 500}
+
+  # ---------------------------------------------------------------------------
+  - module: abz_decoder
+    level: 2
+    parent: axis_ctrl
+    responsibility: "ABZ 正交解码：2FF 同步 + 数字滤波 + 四倍频计数 + Z 索引锁存"
+    clock_domain: clk_100m (输入经同步)
+    ports:
+      - {name: i_clk,        dir: in,  width: 1}
+      - {name: i_rst_n,      dir: in,  width: 1}
+      - {name: i_abz_a,      dir: in,  width: 1,  domain: async, cdc: two_flop_sync}
+      - {name: i_abz_b,      dir: in,  width: 1,  domain: async, cdc: two_flop_sync}
+      - {name: i_abz_z,      dir: in,  width: 1,  domain: async, cdc: two_flop_sync}
+      - {name: i_pos_preset, dir: in,  width: 32}
+      - {name: i_preset_en,  dir: in,  width: 1}
+      - {name: i_snap_req,   dir: in,  width: 1,  note: "SPI 帧完成时请求原子快照"}
+      - {name: o_pos_cnt,    dir: out, width: 32, note: "连续多圈位置计数"}
+      - {name: o_pos_snap,   dir: out, width: 32, note: "与 SPI 帧同拍锁存的快照，用于融合"}
+      - {name: o_dir,        dir: out, width: 1}
+      - {name: o_z_latch,    dir: out, width: 1}
+      - {name: o_z_cnt,      dir: out, width: 32, note: "Z 相事件计数，用于整圈校验"}
+    params:
+      - {name: ABZ_POS_WIDTH, default: 32}
+      - {name: ABZ_QUAD4,     default: 1}
+      - {name: ABZ_FILTER_DEPTH, default: 2, note: "数字滤波深度，限制最高计数频率"}
+    invariants:
+      - "o_pos_snap 在 i_snap_req 有效的同一拍捕获 o_pos_cnt，保证融合数据一致性"
+      - "Z 相只做 2FF 同步，不做深度去抖"
+
+  # ---------------------------------------------------------------------------
+  - module: spi_master_angle
+    level: 2
+    parent: axis_ctrl
+    responsibility: |
+      参数化 SPI 主控：帧长/模式/SCK 频率可配，周期性发起读角度事务。
+      本模块只负责"通用 SPI 传输 + 原始帧搬运"，不做型号相关解析。
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,         dir: in,  width: 1}
+      - {name: i_rst_n,       dir: in,  width: 1}
+      - {name: i_start,       dir: in,  width: 1,  note: "发起一次读事务"}
+      - {name: i_tx_data,     dir: in,  width: 32, note: "待发送命令字"}
+      - {name: o_rx_data,     dir: out, width: 32, note: "接收到的完整帧"}
+      - {name: o_frame_done,  dir: out, width: 1,  note: "帧完成单拍脉冲，用于触发 ABZ 快照"}
+      - {name: o_busy,        dir: out, width: 1}
+      - {name: o_timeout,     dir: out, width: 1,  note: "无响应/异常超时"}
+      - {name: o_sck,         dir: out, width: 1}
+      - {name: o_mosi,        dir: out, width: 1}
+      - {name: i_miso,        dir: in,  width: 1,  domain: async, cdc: two_flop_sync}
+      - {name: o_cs_n,        dir: out, width: 1}
+    params:
+      - {name: SPI_SCK_HZ,     default: 10000000}
+      - {name: SPI_CPOL,       default: 0}
+      - {name: SPI_CPHA,       default: 1}
+      - {name: SPI_FRAME_BITS, default: 16}
+      - {name: CS_SETUP_NS,    default: 100}
+      - {name: CS_HOLD_NS,     default: 100}
+      - {name: FRAME_TIMEOUT_NS, default: 100000}
+
+  # ---------------------------------------------------------------------------
+  - module: angle_frame_decode
+    level: 3
+    parent: spi_master_angle
+    responsibility: "把型号相关的原始帧解析为右对齐角度值 + 有效性标志（AS5047P / MT6701 / TLE5012B 之一）"
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,         dir: in,  width: 1}
+      - {name: i_rst_n,       dir: in,  width: 1}
+      - {name: i_rx_data,     dir: in,  width: 32}
+      - {name: i_frame_done,  dir: in,  width: 1}
+      - {name: o_angle,       dir: out, width: 16, note: "右对齐单圈绝对角"}
+      - {name: o_valid,       dir: out, width: 1}
+      - {name: o_err_flag,    dir: out, width: 1,  note: "帧内错误位（如 AS5047P 的 ERR）"}
+    params:
+      - {name: SPI_ANGLE_BITS, default: 14}
+      - {name: ANGLE_ALIGN_LSB, default: 0}
+    open_decision: D3
+
+  # ---------------------------------------------------------------------------
+  - module: feedback_fusion
+    level: 2
+    parent: axis_ctrl
+    responsibility: |
+      ABZ 增量与 SPI 绝对角的互补融合：
+        - 上电/重新对齐时：用 SPI 绝对角建立与 ABZ 计数的偏移，标记 aligned
+        - 运行中：以 ABZ 计数为高分辨率位置源，用 SPI 绝对角持续做一致性校验
+        - 输出：融合多圈位置 + 速度 + 电角度（三相换相用）+ 不一致故障标志
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,          dir: in,  width: 1}
+      - {name: i_rst_n,        dir: in,  width: 1}
+      - {name: i_en_ctrl_tick, dir: in,  width: 1}
+      - {name: i_pos_cnt,      dir: in,  width: 32, note: "ABZ 连续计数"}
+      - {name: i_pos_snap,     dir: in,  width: 32, note: "ABZ 在 SPI 帧完成拍的快照"}
+      - {name: i_angle_abs,    dir: in,  width: 16, note: "SPI 绝对角"}
+      - {name: i_angle_valid,  dir: in,  width: 1}
+      - {name: i_frame_done,   dir: in,  width: 1}
+      - {name: i_align_req,    dir: in,  width: 1}
+      - {name: i_cnt_per_rev,  dir: in,  width: 32, note: "ABZ 每圈计数（=线数 x4）"}
+      - {name: o_pos_meas,     dir: out, width: 32, note: "融合多圈位置"}
+      - {name: o_pos_offset,   dir: out, width: 32, note: "ABZ-SPI 偏移"}
+      - {name: o_vel_meas,     dir: out, width: 32, note: "速度估计"}
+      - {name: o_elec_angle,   dir: out, width: 16, note: "电角度"}
+      - {name: o_aligned,      dir: out, width: 1}
+      - {name: o_fusion_err,   dir: out, width: 1,  note: "偏差超过阈值并持续 N 个控制周期"}
+    params:
+      - {name: ANGLE_BITS,      default: 14}
+      - {name: MOTOR_POLE_PAIRS,default: 7}
+      - {name: FUSION_ERR_THRESH, default: 8,   note: "允许计数偏差阈值"}
+      - {name: FUSION_ERR_PERSIST,default: 10,  note: "持续控制周期数"}
+    invariants:
+      - "aligned 为 0 时 o_pos_meas 视为无效，PID 必须被抑制"
+      - "一致性校验只做检测与标记，不静默改写 ABZ 计数"
+
+  # ---------------------------------------------------------------------------
+  - module: pid_ctrl
+    level: 2
+    parent: axis_ctrl
+    responsibility: "位置环（外）+ 速度环（内）级联 PID，含抗积分饱和与输出限幅"
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,          dir: in,  width: 1}
+      - {name: i_rst_n,        dir: in,  width: 1}
+      - {name: i_en_ctrl_tick, dir: in,  width: 1}
+      - {name: i_enable,       dir: in,  width: 1}
+      - {name: i_aligned,      dir: in,  width: 1}
+      - {name: i_pos_cmd,      dir: in,  width: 32}
+      - {name: i_pos_meas,     dir: in,  width: 32}
+      - {name: i_vel_meas,     dir: in,  width: 32}
+      - {name: i_vel_ff,       dir: in,  width: 32}
+      - {name: o_vel_cmd,      dir: out, width: 32, note: "外环输出，送内环"}
+      - {name: o_duty_a,       dir: out, width: 16, note: "驱动命令 A 相（或步进速率）"}
+      - {name: o_duty_b,       dir: out, width: 16}
+      - {name: o_duty_c,       dir: out, width: 16}
+      - {name: o_step_rate,    dir: out, width: 32}
+      - {name: o_saturated,    dir: out, width: 1}
+    params:
+      - {name: POS_KP, default: 0, note: "[TBD] 默认值待整定，先置 0 保证安全"}
+      - {name: POS_KI, default: 0}
+      - {name: POS_KD, default: 0}
+      - {name: VEL_KP, default: 0}
+      - {name: VEL_KI, default: 0}
+      - {name: VEL_KD, default: 0}
+      - {name: OUT_MAX, default: 0, note: "[TBD] 输出限幅上限"}
+      - {name: OUT_MIN, default: 0}
+    note: "所有增益默认 0 —— 未整定的 PID 必须默认不产生任何驱动输出"
+
+  # ---------------------------------------------------------------------------
+  - module: debounce
+    level: 2
+    instances: 4 (顶层用于 i_sw) + 可选复用于 ABZ
+    responsibility: "参数化去抖：连续 N 个采样周期电平一致才更新输出"
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,      dir: in,  width: 1}
+      - {name: i_rst_n,    dir: in,  width: 1}
+      - {name: i_en_tick,  dir: in,  width: 1,  note: "采样节拍使能"}
+      - {name: i_raw,      dir: in,  width: 1,  domain: async, cdc: two_flop_sync}
+      - {name: i_active_low,dir: in, width: 1,  note: "极性与映射（可参数化）"}
+      - {name: o_stable,   dir: out, width: 1}
+      - {name: o_rise,     dir: out, width: 1,  note: "去抖后上升沿"}
+      - {name: o_fall,     dir: out, width: 1,  note: "去抖后下降沿"}
+    params:
+      - {name: DEBOUNCE_MS, default: 10}
+      - {name: CLK_FREQ_HZ, default: 100000000}
+
+  # ---------------------------------------------------------------------------
+  - module: digital_out_safe
+    level: 1
+    instances: 1 (4 通道)
+    responsibility: "安全数字输出：复位/上电期间强制安全电平，极性可参数化"
+    clock_domain: clk_100m
+    ports:
+      - {name: i_clk,        dir: in,  width: 1}
+      - {name: i_rst_n,      dir: in,  width: 1}
+      - {name: i_por_done,   dir: in,  width: 1}
+      - {name: i_req,        dir: in,  width: 4,  note: "bit[a]=第 a 轴输出请求（逻辑值）"}
+      - {name: o_dout,       dir: out, width: 4,  note: "物理电平（已按极性映射）"}
+    params:
+      - {name: DOUT_ACTIVE_LOW, default: 0}
+      - {name: DOUT_SAFE_LEVEL, default: 0}
+    invariant: "por_done=0 时 o_dout 恒等于安全电平"
+
+  # ---------------------------------------------------------------------------
+  - module: reg_file
+    level: 1
+    condition: "仅当启用控制面寄存器/PS 访问时需要 —— 见 open_decision D5"
+    responsibility: |
+      命令/状态寄存器组。当前冻结的是"同步并行寄存器接口"，
+      不含总线协议。若确定启用 PS(ARM)，另加 axi_lite_wrapper（含 CDC）作为黑盒。
+    clock_domain: clk_100m（PS 侧另有时钟域，见 clock_reset_cdc.md）
+    black_box: true
+    open_decision: D5
+
+# =============================================================================
+# 未决决策清单（Open Decisions）
+# =============================================================================
+open_decisions:
+  - id: D1
+    question: "外部栅极驱动芯片是 3 输入（自带死区）还是 6 输入（需 PL 供上下管）？"
+    blocks: "o_m_pwm_lo_* 是否引出，影响 FEP 12 根引脚预算"
+    current_default: "按 PL 插死区、输出 6 路（上下管分离）设计 —— 引脚开销最大但最保守"
+    owner: user
+  - id: D2
+    question: "闭环是否包含相电流环（FOC）？"
+    blocks: "闭环拓扑：位置+速度双环 vs 位置+速度+电流三环；是否需要 ADC 采样通路"
+    current_default: "CURRENT_LOOP_EN=0，暂不做电流环"
+    risk: "高危默认。若实际需要 FOC，本架构需增加电流采样通道与 Clarke/Park 变换模块"
+    owner: user
+  - id: D3
+    question: "SPI 角度传感器型号？4 路 SPI 是否共享 SCK/MOSI？"
+    blocks: "SPI 帧长/模式/命令字/角度位宽；16 vs 10 根引脚"
+    current_default: "16 bit 帧 / Mode 1 / 14 bit 角度 / 4 路独立 SCK+MOSI"
+    owner: user
+  - id: D4
+    question: "4 轴的电机类型逐轴分配（哪些步进、哪些三相 BLDC）？"
+    blocks: "AXIS_DRIVE_MODE[3:0] 的实际取值；每轴的引脚开销"
+    current_default: "四轴默认均为三相模式 AXIS_DRIVE_MODE=4'b0000"
+    owner: user
+  - id: D5
+    question: "是否启用 PS(ARM Linux) 参与控制面？"
+    blocks: "是否需要寄存器地图与 AXI-Lite/APB 总线接口模块及 CDC"
+    current_default: "不启用，命令面为 PL 内部同步寄存器接口"
+    owner: user
+  - id: D6
+    question: "每轴数字输出需要 1 路（使能或抱闸）还是 2 路（使能 + 抱闸各一）？"
+    blocks: "o_dout 宽度 4 vs 8"
+    current_default: "4 位，每轴 1 路"
+    owner: user
+  - id: D7
+    question: "是否引出外部复位引脚，还是只用内部上电复位？"
+    blocks: "i_rst_n 是否存在，CEP-J12 是否占用 1 根引脚"
+    current_default: "引出 i_rst_n，取自 CEP-J12"
+    owner: user

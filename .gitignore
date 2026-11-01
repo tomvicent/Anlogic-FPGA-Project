@@ -1,0 +1,53 @@
+# Vivado / FPGA build outputs
+**/.Xil/
+**/*.cache/
+**/*.runs/
+**/*.sim/
+**/sim/work/
+*.jou
+*.log
+*.log.*
+*.logw
+*.pb
+*.dcp
+*.bit
+*.ltx
+*.vdi
+*.rpt
+*.rpx
+
+# ModelSim / Questa generated files
+*.wlf
+*.wdb
+*.mti
+*.vstf
+transcript
+**/sim/*.mpf
+**/sim/wlft*
+
+# Quartus generated files
+**/db/
+**/incremental_db/
+**/output_files/
+*.qdb
+*.qpg
+*.qtl
+
+# Local secrets and operating system files
+.env
+.env.*
+Thumbs.db
+.DS_Store
+
+# Extra simulation / IDE generated files
+*.vcd
+*.pdom
+*.qpg
+*.qtl
+*.wdb
+*.wlf
+*.playback
+**/.Xil/
+**/.metadata/
+**/__pycache__/
+*.pyc

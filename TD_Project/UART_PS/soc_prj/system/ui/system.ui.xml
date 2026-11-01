@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ipxact:position xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014" xmlns:anlogic="http" xsi:schemaLocation="http://www.accellera.org/XMLSchema/IPXACT/1685-2014 http://www.accellera.org/XMLSchema/IPXACT/1685-2014/index.xsd">
+    <ipxact:instances>
+        <ipxact:instance vendor="anlogic.com" library="ip" name="ARM_Processor_System_0" version="1.0">
+            <ipxact:xPos>5</ipxact:xPos>
+            <ipxact:yPos>0</ipxact:yPos>
+            <ipxact:width>273</ipxact:width>
+            <ipxact:height>92</ipxact:height>
+            <ipxact:isPin>false</ipxact:isPin>
+            <ipxact:highlight>#40629d</ipxact:highlight>
+            <ipxact:instPorts>
+                <ipxact:instPort>
+                    <ipxact:name>p2f_clk0</ipxact:name>
+                    <ipxact:highlight>#000000</ipxact:highlight>
+                </ipxact:instPort>
+            </ipxact:instPorts>
+            <ipxact:instBusPorts/>
+        </ipxact:instance>
+    </ipxact:instances>
+    <ipxact:designPorts>
+        <ipxact:designPort name="p2f_clk0">
+            <ipxact:xPos>498</ipxact:xPos>
+            <ipxact:yPos>46</ipxact:yPos>
+            <ipxact:width>15</ipxact:width>
+            <ipxact:height>10</ipxact:height>
+            <ipxact:isPin>false</ipxact:isPin>
+            <ipxact:highlight>#000000</ipxact:highlight>
+        </ipxact:designPort>
+    </ipxact:designPorts>
+    <ipxact:nodes>
+        <ipxact:node name="w_net__ARM_Processor_System_0__p2f_clk0">
+            <ipxact:highlight>#0e2232</ipxact:highlight>
+        </ipxact:node>
+    </ipxact:nodes>
+    <ipxact:scrollBar>
+        <ipxact:hValue>0</ipxact:hValue>
+        <ipxact:vValue>0</ipxact:vValue>
+    </ipxact:scrollBar>
+    <ipxact:scale>
+        <ipxact:xScale>1</ipxact:xScale>
+        <ipxact:yScale>1</ipxact:yScale>
+    </ipxact:scale>
+</ipxact:position>

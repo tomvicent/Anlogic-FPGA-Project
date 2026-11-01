@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ipxact:design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014" xmlns:anlogic="http" xsi:schemaLocation="http://www.accellera.org/XMLSchema/IPXACT/1685-2014 http://www.accellera.org/XMLSchema/IPXACT/1685-2014/index.xsd">
+    <ipxact:vendor>anlogic.com</ipxact:vendor>
+    <ipxact:library>customized</ipxact:library>
+    <ipxact:name>design_system_ARM_Processor_System_0_bfm</ipxact:name>
+    <ipxact:version>1.0</ipxact:version>
+    <ipxact:componentInstances>
+        <ipxact:componentInstance>
+            <ipxact:instanceName>ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst</ipxact:instanceName>
+            <ipxact:componentRef vendor="anlogic.com" library="ip" name="Processor_System_BFM" version="1.0"/>
+            <ipxact:configurableElementValues>
+                <ipxact:configurableElementValue referenceId="AL_S_AXI_HP0_ENABLE">0</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_S_AXI_HP1_ENABLE">0</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_M_AXI_GP0_ENABLE">0</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_M_AXI_GP1_ENABLE">0</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_S_AXI_GP0_ENABLE">0</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_S_AXI_GP1_ENABLE">0</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_S_AXI_ACP_ENABLE">0</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_MEM_CLK_FREQ">400</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_FAHB_HCLK_FREQ">100</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_FCLK_CLK0_FREQ">50</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_FCLK_CLK1_FREQ">50</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_FCLK_CLK2_FREQ">50</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_FCLK_CLK3_FREQ">50</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_M_AXI_GP0_THREAD_ID_WIDTH">12</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_M_AXI_GP1_THREAD_ID_WIDTH">12</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_IRQ_WIDTH">16</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_AXI_SGP_DATA_WIDTH">32</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_M_FAHB_ENABLE">1</ipxact:configurableElementValue>
+                <ipxact:configurableElementValue referenceId="AL_M_FAHB_DATA_WIDTH">32</ipxact:configurableElementValue>
+            </ipxact:configurableElementValues>
+        </ipxact:componentInstance>
+    </ipxact:componentInstances>
+    <ipxact:adHocConnections>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_clk_glb</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_clk_glb"/>
+                <ipxact:externalPortReference portRef="master_fahb_clk_glb"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_clk_lcl</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_clk_lcl"/>
+                <ipxact:externalPortReference portRef="master_fahb_clk_lcl"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_hresp</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_hresp"/>
+                <ipxact:externalPortReference portRef="master_fahb_hresp"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_hrdata</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_hrdata"/>
+                <ipxact:externalPortReference portRef="master_fahb_hrdata"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_hsel</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_hsel"/>
+                <ipxact:externalPortReference portRef="master_fahb_hsel"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_haddr</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_haddr"/>
+                <ipxact:externalPortReference portRef="master_fahb_haddr"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_hsize</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_hsize"/>
+                <ipxact:externalPortReference portRef="master_fahb_hsize"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_hwrite</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_hwrite"/>
+                <ipxact:externalPortReference portRef="master_fahb_hwrite"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_hburst</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_hburst"/>
+                <ipxact:externalPortReference portRef="master_fahb_hburst"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_hprot</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_hprot"/>
+                <ipxact:externalPortReference portRef="master_fahb_hprot"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_htrans</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_htrans"/>
+                <ipxact:externalPortReference portRef="master_fahb_htrans"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_hready</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_hready"/>
+                <ipxact:externalPortReference portRef="master_fahb_hready"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>pl2ps_fahb_fbclk</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="pl2ps_fahb_fbclk"/>
+                <ipxact:externalPortReference portRef="pl2ps_fahb_fbclk"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_hreadyout</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_hreadyout"/>
+                <ipxact:externalPortReference portRef="master_fahb_hreadyout"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>master_fahb_hwdata</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="master_fahb_hwdata"/>
+                <ipxact:externalPortReference portRef="master_fahb_hwdata"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>p2f_clk3</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="p2f_clk3"/>
+                <ipxact:externalPortReference portRef="p2f_clk3"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>p2f_clk2</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="p2f_clk2"/>
+                <ipxact:externalPortReference portRef="p2f_clk2"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>p2f_clk1</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="p2f_clk1"/>
+                <ipxact:externalPortReference portRef="p2f_clk1"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>p2f_clk0</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="p2f_clk0"/>
+                <ipxact:externalPortReference portRef="p2f_clk0"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>p2f_rst3_n</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="p2f_rst3_n"/>
+                <ipxact:externalPortReference portRef="p2f_rst3_n"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>p2f_rst2_n</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="p2f_rst2_n"/>
+                <ipxact:externalPortReference portRef="p2f_rst2_n"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>p2f_rst1_n</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="p2f_rst1_n"/>
+                <ipxact:externalPortReference portRef="p2f_rst1_n"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>p2f_rst0_n</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="p2f_rst0_n"/>
+                <ipxact:externalPortReference portRef="p2f_rst0_n"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>f2p_irq</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="f2p_irq"/>
+                <ipxact:externalPortReference portRef="f2p_irq"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>ps_srstb</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="ps_srstb"/>
+                <ipxact:externalPortReference portRef="ps_srstb"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>ps_clk</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="ps_clk"/>
+                <ipxact:externalPortReference portRef="ps_clk"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>ps_porb</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="ps_bfm_top_system_ARM_Processor_System_0_bfm_Inst" portRef="ps_porb"/>
+                <ipxact:externalPortReference portRef="ps_porb"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+    </ipxact:adHocConnections>
+    <ipxact:vendorExtensions>
+        <anlogic:device>DR1M90GEG400</anlogic:device>
+        <anlogic:displayname>Processor System BFM</anlogic:displayname>
+        <anlogic:ipGenVersion value="193873 2026/03/31">1.0</anlogic:ipGenVersion>
+    </ipxact:vendorExtensions>
+</ipxact:design>
